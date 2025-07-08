@@ -1,0 +1,2 @@
+Hint: Flagul se afla intr-un fisier ascuns. Exploreaza fisierele care incep cu punct. 
+Sugestie: Foloseste ls -la sa vezi fisierele ascunse.
