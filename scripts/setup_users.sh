@@ -1,73 +1,104 @@
 #!/bin/bash
 
-if [[ $EUID -ne 0 ]]
-then
-	echo "Ar trebui sa rulezi ca root (ex: sudo ./setup_users.sh)"
-	exit 1
-fi
+set -e
 
-NUM_LEVELS=5
-BASE_HOME="/home"
+LEVEL_COUNT=5
+USERS_FILE="users/users.txt"
 
-for i in $(seq -w 1 $NUM_LEVELS)
+mkdir -p users
+> "$USERS_FILE"
+
+chmod 600 "$USERS_FILE"
+chown root:root "$USERS_FILE"
+
+generate_password() {
+	echo "soCTF$(openssl rand -hex 4)"
+}
+
+for i in $(seq -w 1 $LEVEL_COUNT)
 do
-	USER="level_$i"
-	PASS="parola$i"
-	USER_HOME="$BASE_HOME/$USER"
-	CHALLENGE_DIR="challenges/$USER"
-	HINT_FILE="hints/$USER.txt"
-	FLAG_FILE="flags/$USER.flag"
+	USER=$(printf "level_%02d" "$i")
+	PASSWORD=$(generate_password)
+	HOME_DIR="/home/$USER"
 
-	#creeaza utilizator cu home propriu
-	useradd -m -d "$USER_HOME" -s /bin/bash "$USER"
+	echo "$USER:$PASSWORD" >> "$USERS_FILE"
 
-	#seteaza parola
-	echo "$USER:$PASS" | chpasswd
+	if ! id "$USER" &>/dev/null
+	then
+		#creeaza utilizator cu home propriu
+		useradd -m -d "$HOME_DIR" -s /bin/bash "$USER"
+
+		#seteaza parola
+		echo "$USER:$PASSWORD" | sudo chpasswd
+	fi
 
 	#restrictioneaza accesul la home-ul altor utilizatori
-	chmod 700 "$USER_HOME"
+	sudo chmod 700 "$HOME_DIR"
 
 	#copiaza challenge.sh
-	if [[ -f "$CHALLENGE_DIR/challenge.sh" ]]
-	then
-		cp "$CHALLENGE_DIR/challenge.sh" "$USER_HOME/"
-		chmod +x "$USER_HOME/challenge.sh"
-	fi
+	CHALLENGE_FILE="challenge/$USER/challenge.sh"
+	[[ -f "$CHALLENGE_FILE" ]] && 
+		sudo cp "$CHALLENGE_FILE" "$HOME_DIR/challenge.sh" && 
+		sudo chmod +x "$HOME_DIR/challenge.sh"
 
-	if [[ -f start.sh ]]
-	then
-		cp start.sh "$USER_HOME/"
-		chmod +x "$USER_HOME/start.sh"
-		chown "$USER:$USER" "$USER_HOME/start.sh"
-	fi
-
+	
 	#copiaza hint-ul
-	if [[ -f "$HINT_FILE" ]]
-	then
-		cp "$HINT_FILE" "$USER_HOME/hint.txt"
-	fi
+	HINT_FILE="hints/$USER.txt"
+	[[ -f "$HINT_FILE" ]] && 
+		sudo cp "$HINT_FILE" "$HOME_DIR/hint.txt"
 
 	#copiaza flag-ul
+	FLAG_FILE="flags/$USER.flag"
 	if [[ "$USER" == "level_01" && -f "$FLAG_FILE" ]] 
 	then
-		cp "$FLAG_FILE" "$USER_HOME/.hidden_flag"
-		chmod 600 "$USER_HOME/.hidden_flag"
-		chown root:"$USER" "$USER_HOME/.hidden_flag"
+		sudo cp "$FLAG_FILE" "$HOME_DIR/.hidden_flag"
+		echo "FLAG{SO2025CTF_5a0165fd}" > "$HOME_DIR/.hidden_flag"    # adaug flag-ul in in fisierul corespunzator pt level_01
+		chmod 640 "$HOME_DIR/.hidden_flag"
+		chown root:"$USER" "$HOME_DIR/.hidden_flag"
 	else
 		if [[ -f "$FLAG_FILE" ]] 
 		then
-			cp "$FLAG_FILE" "$USER_HOME/flag.txt"
-			chmod 600 "$USER_HOME/flag.txt"
-			chown root:"$USER" "$USER_HOME/flag.txt"
+			cp "$FLAG_FILE" "$HOME_DIR/flag.txt"
+			chmod 600 "$HOME_DIR/flag.txt"
+			chown root:"$USER" "$HOME_DIR/flag.txt"
 		fi
 	fi
+	
+	#adaug si fisiere derutante sau inutile
+
+	echo "Continut irelevant, acest fisier nu contine nici-un flag." > "$HOME_DIR/note.txt"
+	echo "DEBUG=false" > "$HOME_DIR/debug.sh"
+	echo "temporary log" > "$HOME_DIR/tmp.log"
+
+  	chmod 644 "$HOME_DIR/note.txt" "$HOME_DIR/debug.sh" "$HOME_DIR/tmp.log"
+  	chown root:"$USER" "$HOME_DIR/note.txt" "$HOME_DIR/debug.sh" "$HOME_DIR/tmp.log"
 
 
-	#propietar pe tot home-ul: Level_X
-	chown -R "$USER:$USER" "$USER_HOME"
+	#adaug meniul de inceput
+	sudo bash -c "cat > '$HOME_DIR/welcome.sh' << 'EOF'
+#!/bin/bash
+echo \" Bine ai venit la nivelul $USER!\"
 
-	echo "Utilizator $USER creat cu parola '$PASS' si fisierele aferente."
+PS3=\"Alege o optiune: \"
+options=(\"Hint\" \"Challenge\" \"Submit Flag\" \"Iesi\")
+select opt in \"\${options[@]}\"
+do
+	case \$opt in
+		\"Hint\") cat ~/hint.txt ;;
+		\"Challenge\") bash ~/challenge.sh ;;
+		\"Submit FLag\")
+			read -p \"Introdu flag-ul: \" user_flag
+			bash ~/../scripts/validate_flag.sh \"$USER\" \"\$user_flag\"
+			;;
+		\"Iesi\") exit ;;
+		*) echo \"Optiune invalida\" ;;
+	esac
 done
+EOF"
 
+	sudo chmod +x "$HOME_DIR/welcome.sh"
+	sudo chown $USER:$USER "$HOME_DIR/welcome.sh"
+done	
 
+	echo "Userii au fost creeati. Verefifica parolele in $USERS_FILE."
 

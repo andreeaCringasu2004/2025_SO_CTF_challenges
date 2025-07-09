@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function run_challenge() {
+run_challenge() {
 	LEVEL="$1"
 	CHALLENGE_FILE="challenges/${LEVEL}/challenge.sh"
 
@@ -13,7 +13,7 @@ function run_challenge() {
 	fi
 }
 
-function show_hint() {
+show_hint() {
 	LEVEL="$1"
 	HINT_FILE="hints/${LEVEL}.txt"
 
@@ -25,10 +25,39 @@ function show_hint() {
 	fi
 }
 
-function submit_flag()
+submit_flag()
 {
 	LEVEL="$1"
-	read -p "Introdu flag-ul pentru "$LEVEL: " user_flag
+	read -p "Introdu flag-ul pentru $LEVEL: " user_flag
 	bash scripts/validate_flag.sh "$LEVEL" "$user_flag"
 }
+
+save_player_name() {
+	echo "$1" > "$HOME/.ctf_player_name"
+}
+
+get_player_name() {
+	cat "$HOME/.ctf_player_name"
+}
+
+update_score() {
+	local player_name="$1"
+	local level="$2"
+	local used_hint="$3"
+	local score_file="users/scores.txt"
+	local points=$(( used_hint == 1 ? 50 : 100 ))
+	local total=0
+
+	mkdir -p users
+	touch "$score_file"
+
+	# actualizeaza scorul curent
+	echo "$player_name $level $used_hint $points" >> "$score_file"
+
+	total=$(awk -v name="$player_name" '$1==name {sum+=$4} END {print sum}' "$score_file")
+	echo "Scor total actualizat: $total puncte"
+}
+
+
+
 
