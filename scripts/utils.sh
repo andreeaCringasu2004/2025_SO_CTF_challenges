@@ -12,8 +12,8 @@ run_challenge() {
 		echo "Provocarea pentru $LEVEL nu exista sau nu este executabila."
 	fi
 
-	echo -e "\nIntrare în provocare ca user $LEVEL..."
-	su - "$LEVEL" -c "./welcome.sh"
+	# echo -e "\nIntrare în provocare ca user $LEVEL..."
+	# su - "$LEVEL" -c "./welcome.sh"
 }
 
 show_hint() {

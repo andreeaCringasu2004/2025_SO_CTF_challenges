@@ -1,0 +1,5 @@
+level_01:1234
+level_02:FLAGsoCTF_42dc5c40
+level_03:FLAGsoCTF_74593aaf
+level_04:FLAGsoCTF_d6b126fa
+level_05:FLAGsoCTF_c14b4df9
