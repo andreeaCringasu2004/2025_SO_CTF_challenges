@@ -2,7 +2,7 @@
 
 set -e
 
-LEVEL_COUNT=5
+LEVEL_COUNT=15
 USERS_FILE="scripts/users/users.txt"
 
 mkdir -p scripts/users
@@ -11,22 +11,24 @@ chmod 600 "$USERS_FILE"
 
 for i in $(seq -w 1 $LEVEL_COUNT)
 do
-	USER=$(printf "level_%02d" "$i")
+	NUMERIC_I=$((10#$i))
+	USER=$(printf "level_%02d" "$NUMERIC_I")
 	HOME_DIR="/home/$USER"
-	NUM_I=$((10#$i))  # transforma in numar
 
 	# setez parola pt primul nivel separat ca fiind 1234
 	# setez parola user-ului ca fiind continutul fara acolade din fiserele de flags
-	if [[ "$NUM_I" -eq 1 ]]
+	if [[ "$NUMERIC_I" -eq 1 ]]
 	then
 		PASSWORD="1234"
 	else
-		PREV_NUM=$(printf "%02d" $((NUM_I - 1)))
+		#Elimina zero-urile din fata pt a obt val numerica singura
+		# VALOARE_NUMERICA=$(echo "$NUM_I" | sed 's/^0*//')
+		PREV_NUM=$(printf "%02d" $((NUMERIC_I - 1)))
 		PREV_FLAG_FILE="flags/level_${PREV_NUM}.flag"
 
 		if [[ -f "$PREV_FLAG_FILE" ]]
 		then
-			PASSWORD=$(cat "$PREV_FLAG_FILE" | tr -d '{}')
+			PASSWORD=$(grep -oP '(?<=FLAG\{)soCTF_[^}]+(?=\})' "$PREV_FLAG_FILE")
 		else
 			echo "❌ Lipseste flagul pentru level_$PREV_NUM"
             		exit 1
@@ -78,6 +80,44 @@ do
   	chmod 644 "$HOME_DIR/note.txt" "$HOME_DIR/debug.sh" "$HOME_DIR/tmp.log"
   	chown root:"$USER" "$HOME_DIR/note.txt" "$HOME_DIR/debug.sh" "$HOME_DIR/tmp.log"
 
+	# Setup specific pentru fiecare nivel
+	if [[ "$USER" == "level_01" ]]; then
+		echo "FLAG{soCTF_42dc5c40}" > "$HOME_DIR/.hidden_flag"
+		chmod 644 "$HOME_DIR/.hidden_flag"
+		chown "$USER:$USER" "$HOME_DIR/.hidden_flag"
+	fi
+
+	if [[ "$USER" == "level_02" ]]; then
+		mkdir -p "$HOME_DIR/logs"
+		for i in {1..200}; do echo "Linie zgomot $i" >> "$HOME_DIR/logs/sys.log"; done
+		echo "FLAG{soCTF_74593aaf}" >> "$HOME_DIR/logs/sys.log"
+		echo "ALTceva" > "$HOME_DIR/logs/debug.tmp"
+		echo "FLAG_fake{not_the_real_one}" >> "$HOME_DIR/logs/debug.tmp"
+		chown -R "$USER:$USER" "$HOME_DIR/logs"
+	fi
+
+	if [[ "$USER" == "level_03" ]]; then
+		echo "FLAG{soCTF_d6b126fa}" > "$HOME_DIR/flag_secret"
+		chmod 000 "$HOME_DIR/flag_secret"
+		chown "$USER:$USER" "$HOME_DIR/flag_secret"
+		echo "Nu e aici flagul" > "$HOME_DIR/fake.txt"
+		chmod 644 "$HOME_DIR/fake.txt"
+		chown "$USER:$USER" "$HOME_DIR/fake.txt"
+	fi
+
+	if [[ "$USER" == "level_04" ]]; then
+		echo -n "FLAG{soCTF_c14b4df9}" | base64 > "$HOME_DIR/encrypted.txt"
+		echo -n "Nu este flagul!" | base64 > "$HOME_DIR/notes.b64"
+		chown "$USER:$USER" "$HOME_DIR/encrypted.txt" "$HOME_DIR/notes.b64"
+	fi
+
+	if [[ "$USER" == "level_05" ]]; then
+		mkdir -p "$HOME_DIR/old/conf"
+		echo "FLAG{soCTF_fbd6e45d}" > "$HOME_DIR/old/conf/flag.bak"
+		echo "backup inutil" > "$HOME_DIR/old/conf/config.bak"
+		echo "not the flag" > "$HOME_DIR/old/conf/not_the_flag.txt"
+		chown -R "$USER:$USER" "$HOME_DIR/old"
+	fi
 
 	# welcome meniu per level
 	cat > "$HOME_DIR/welcome.sh" <<EOF

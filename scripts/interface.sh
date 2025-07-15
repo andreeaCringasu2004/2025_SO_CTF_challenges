@@ -7,7 +7,7 @@ mkdir -p history
 CURRENT_USER=$(whoami)
 
 # introducere nume jucator (inregistrare sau citire jucator)
-if [[ ! -f "$HOME/.ctf_player_name" ]]
+if [[ -f "$HOME/.ctf_player_name" ]]
 then
 	OLD_PLAYER=$(cat "$HOME/.ctf_player_name")
 	echo "Jucator curent salvat: $OLD_PLAYER"
@@ -20,7 +20,7 @@ then
 		save_player_name "$PLAYER_NAME"
 	fi
 else	
-	read -p "Introdu numele tau de jucator: " PLAYER_NAME
+	read -p "Nu exista niciun ucator salvat. Introdu numele tau de jucator: " PLAYER_NAME
 	save_player_name "$PLAYER_NAME"
 fi
 

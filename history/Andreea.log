@@ -1,6 +1,1 @@
 LEVEL=level_01 HINT=0 SCORE=100 CREDS='User: level_02 | Parola: FLAG{soCTF_42dc5c40}'
-LEVEL=level_01 HINT=0 SCORE=100 CREDS='User: level_02 | Parola: FLAG{soCTF_42dc5c40}'
-LEVEL=level_02 HINT=0 SCORE=100 CREDS='User: level_03 | Parola: FLAG{soCTF_74593aaf}'
-LEVEL=level_03 HINT=0 SCORE=100 CREDS='User: level_04 | Parola: FLAG{soCTF_d6b126fa}'
-LEVEL=level_04 HINT=1 SCORE=50 CREDS='User: level_05 | Parola: FLAG{soCTF_c14b4df9}'
-LEVEL=level_05 HINT=0 SCORE=100 CREDS='User: level_06 | Parola: FLAG{soCTF_fbd6e45d}'

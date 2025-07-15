@@ -35,22 +35,22 @@ then
 	NEXT_NUM=$(printf "%02d" $((10#$CURR_NUM + 1)))
 	NEXT_USER="level_$NEXT_NUM"
 
+	# extrag  parola din cadrul flag-ului, pt urmatorul user/nivel
+	PASSWORD=$(grep -oP '(?<=FLAG\{).*(?=\})' "$FLAG_FILE")
+
 	if id "$NEXT_USER" &>/dev/null
 	then
-		# extrag parola pt urmatorul user ca fiind flagul gasit, doar partea dintre acolade
-		PASSWORD=$(grep -oP '(?<=FLAG\{).*(?=\})' "$FLAG_FILE")
-
 		# setez parola
 		echo "$NEXT_USER:$PASSWORD" | chpasswd
-
 		CREDS="User: $NEXT_USER | Parola: $PASSWORD"
         	echo -e "\n🔐 $CREDS"
         	echo -e "\n🔓 Parola setata pentru $NEXT_USER"
-
 		record_level "$PLAYER" "$LEVEL" "$USED_HINT" "$SCORE" "$CREDS"
 	else
-		echo -e "\n🎉 Ai terminat ultimul nivel!"
-        	record_level "$PLAYER" "$LEVEL" "$USED_HINT" "$SCORE" "Ultimul nivel"
+		echo -e "\n🎉 Felicitari, $PLAYER! Ai terminat toate cele 15 niveluri!"
+		echo "🏁 Jocul s-a încheiat. Îți mulțumim că ai participat!"
+		echo "📜 Scorul tău final este salvat în users/scores.txt"
+		record_level "$PLAYER" "$LEVEL" "$USED_HINT" "$SCORE" "Final completat"
     	fi
 
 	exit 0

@@ -2,7 +2,7 @@
 
 echo "🔁 Resetare utilizatori Linux SO CTF..."
 
-NUM_LEVELS=5
+NUM_LEVELS=15
 for i in $(seq -w 1 $NUM_LEVELS); do
     USER="level_$i"
     echo "Sterg utilizatorul $USER..."
