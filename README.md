@@ -7,3 +7,4 @@
 11-13.07.2025 -> am incercat sa rezolv niste erori si sa vad sa am ceea ce voi mai vrea sa fac
 14.07.2025 -> Am continuat ceea ce am facut pana acum focusandu-ma pentru parte de setup si meniuri si tot felul de detalii
 15.07.2025 -> Am facut si datele pt nivelele 2 - 5, iar jocul va acea maxim 15 nivele
+16.07.2025 -> Am finalizat nivelele, am realizat terminalul simulat si am mai adaugat optiuni si incercat sa mai corectez mici probleme din cadrul codului

@@ -6,22 +6,49 @@ mkdir -p history
 
 CURRENT_USER=$(whoami)
 
-# introducere nume jucator (inregistrare sau citire jucator)
-if [[ -f "$HOME/.ctf_player_name" ]]
+# Citesc lista jucatorilor din fisierele din history/
+PLAYERS=()
+if compgen -G "history/*.log" > /dev/null
 then
-	OLD_PLAYER=$(cat "$HOME/.ctf_player_name")
-	echo "Jucator curent salvat: $OLD_PLAYER"
-	read -p "Vrei sa continui cu acest jucator? [Y/N]: " raspuns
-	if [[ "$raspuns" =~ ^[Yy]$ ]]
+    for file in history/*.log; do
+        # extrag numele jucatorului din numele fisierului (fara .log)
+        playername=$(basename "$file" .log)
+        PLAYERS+=("$playername")
+    done
+fi
+
+if [[ ${#PLAYERS[@]} -gt 0 ]]
+then
+    echo "Jucatori salvati gasiti:"
+    
+    for i in "${!PLAYERS[@]}"
+    do
+        echo "  $((i+1)). ${PLAYERS[$i]}"
+    done
+
+    echo "  0. Introdu un nume nou"
+
+    read -p "Alege un numar pentru a continua cu jucatorul respectiv sau 0 pentru nume nou: " choice
+
+    if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 0 && choice <= ${#PLAYERS[@]} ))
+    then
+        if (( choice == 0 ))
 	then
-		PLAYER_NAME="$OLD_PLAYER"
-	else
-		read -p "Introdu un nou nume de jucator: " PLAYER_NAME
-		save_player_name "$PLAYER_NAME"
-	fi
-else	
-	read -p "Nu exista niciun ucator salvat. Introdu numele tau de jucator: " PLAYER_NAME
-	save_player_name "$PLAYER_NAME"
+            read -p "Introdu un nume nou de jucator: " PLAYER_NAME
+            save_player_name "$PLAYER_NAME"
+        else
+            PLAYER_NAME="${PLAYERS[$((choice-1))]}"
+            save_player_name "$PLAYER_NAME"
+            echo "Ai ales jucatorul: $PLAYER_NAME"
+        fi
+    else
+        echo "Optiune invalida. Iesire."
+        exit 1
+    fi
+else
+    # Nu exista niciun jucator salvat, creez nume nou
+    read -p "Nu exista niciun jucator salvat. Introdu un nume nou de jucator: " PLAYER_NAME
+    save_player_name "$PLAYER_NAME"
 fi
 
 
@@ -38,6 +65,67 @@ fi
 
 LEVEL="$LAST_LEVEL"
 USED_HINT=0
+
+# Functie -  verific toate flagurile salvate pana la nivelulu curent
+
+verify_saved_flags() {
+	
+	echo "🔎 Verificare flaguri salvate pentru jucator $PLAYER_NAME..."
+
+	LAST_GOOD_LEVEL=""
+	STOP_AT_LEVEL=0
+
+	for i in $(seq -w 1 15)
+	do
+		USER="level_$i"
+		USER_HOME="/home/$USER"
+		FLAG_FILE="flags/$USER.flag"
+		SAVED_FLAGS="$USER_HOME/.found_flags"
+
+		if [[ ! -f "$FLAG_FILE" ]]
+		then
+			echo "⚠️  Flag oficial lipsa pentru $USER"
+			continue
+		fi
+
+		REAL_FLAG=$(cat "$FLAG_FILE")
+
+		if [[ -f "$SAVED_FLAGS" ]]
+		then
+			if grep -q "$REAL_FLAG" "$SAVED_FLAGS"
+			then
+				echo "✅ $USER: flag corect"
+				LAST_GOOD_LEVEL="$USER"
+			else
+				echo "❌ $USER: flag incorect - eliminam flegurile de la acest nivel in sus"
+				STOP_AT_LEVEL=$i
+				break;
+			fi
+		else
+			echo "❌ $USER: niciun flag salvat"
+            		STOP_AT_LEVEL=$i
+            		break
+		fi
+	done
+
+	if [[ "$STOP_AT_LEVEL" -ne 0 ]]
+	then
+        	for j in $(seq -w $STOP_AT_LEVEL 15)
+		do
+            		sudo rm -f "/home/level_$j/.found_flags"
+        	done
+    	fi
+
+    	if [[ -n "$LAST_GOOD_LEVEL" ]]
+	then
+        	echo "📌 Ultimul nivel valid: $LAST_GOOD_LEVEL"
+        	LEVEL="$LAST_GOOD_LEVEL"
+    	else
+        	echo "ℹ️ Nu există flaguri valide — se revine la level_01"
+        	LEVEL="level_01"
+    	fi
+}
+
 
 
 # Meniul principal
@@ -57,11 +145,13 @@ do
 	echo "    1. Ruleaza provocarea"
 	echo "    2. Afiseaza hint"
 	echo "    3. Trimite flag"
-	echo "    4. Iesi"
+	echo "    4. Verifica flagurile salvate"
+	echo "    5. Joaca un nivel anterior (max $LEVEL)"
+	echo "    6. Iesi"
 	echo " "
 	echo "=========================================================="
 
-	read -p "Alege o optiune [1-4]: " opt
+	read -p "Alege o optiune [1-6]: " opt
 
 	case $opt in
 		1) 
@@ -95,7 +185,28 @@ do
 				USED_HINT=0
 			fi
 			;;
-		4)
+		4)	
+			verify_saved_flags
+			echo -e "Nivelul curent actualizat: $LEVEL"
+			;;
+		5)
+			read -p "Introdu nivelul dorit (ex: level_02): " chosen
+		        if [[ "$chosen" =~ ^level_[0-9]{2}$ ]]
+			then
+				CHOSEN_NUM=$((10#${chosen:6}))
+				CURRENT_NUM=$((10#${LEVEL:6}))
+				
+				if (( CHOSEN_NUM <= CURRENT_NUM ))
+				then
+                    			su - "$chosen" -c "./welcome.sh"
+                		else
+                    			echo "❌ Nu ai ajuns încă la $chosen."
+                		fi
+			else
+				echo "⚠️ Format invalid. Scrie ex: level_03"
+			fi	
+			;;
+		6)
 			echo "La revedere!" ; 
 			exit 0 
 			;;

@@ -50,6 +50,14 @@ submit_flag()
 		update_score "$player" "$level" "$used_hint" "$score"
 		record_level "$player" "$level" "$used_hint" "$score" "$creds"
 
+		
+		# Salvare automată flag în .found_flags al utilizatorului de nivel curent
+		flag_storage="/home/$level/.found_flags"
+
+		echo "$user_flag" | sudo tee -a "$flag_storage" > /dev/null
+		sudo chown "$level:$level" "$flag_storage"
+
+		
 		echo -e "\n✅ Corect! Treci la nivelul $next_level."
 		return 0
 	else
